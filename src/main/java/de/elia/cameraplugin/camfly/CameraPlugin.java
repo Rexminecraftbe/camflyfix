@@ -212,6 +212,7 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         hitboxEntities.put(hitbox.getUniqueId(), player.getUniqueId());
 
         startHitboxSync(armorStand, hitbox);
+        startArmorStandHealthCheck(player, armorStand);
         addPlayerToNoCollisionTeam(player);
         updateViewerTeam(player);
         updateVisibilityForAll();
@@ -618,6 +619,9 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         // Cancel attacks on anything except the player's own armor stand or hitbox
         if (ownerUUID == null || !ownerUUID.equals(attacker.getUniqueId())) {
             event.setCancelled(true);
+            if (ownerUUID != null && !ownerUUID.equals(attacker.getUniqueId())) {
+                attacker.sendMessage(getMessage("cant-attack-other-body"));
+            }
         }
     }
 
