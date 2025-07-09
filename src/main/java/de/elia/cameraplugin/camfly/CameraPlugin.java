@@ -385,7 +385,11 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
 
         String messageKey = event instanceof EntityDamageByEntityEvent ?
                 "body-attacked" : "body-env-damage";
-        owner.sendMessage(getMessage(messageKey).replace("{damager}", damagerName));
+        owner.sendMessage(
+                getMessage(messageKey)
+                        .replace("{damager}", damagerName)
+                        .replace("{cause}", event.getCause().toString())
+        );
         pendingDamage.remove(ownerUUID);
     }
 
@@ -409,6 +413,15 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
                     player.sendMessage(getMessage("cant-interact-other"));
                 }
             }
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onHitboxTransform(EntityTransformEvent event) {
+        if (event.getTransformReason() == EntityTransformEvent.TransformReason.LIGHTNING
+                && event.getEntity() instanceof Villager villager
+                && hitboxEntities.containsKey(villager.getUniqueId())) {
+            event.setCancelled(true);
         }
     }
 
