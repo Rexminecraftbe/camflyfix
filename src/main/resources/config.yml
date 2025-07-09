@@ -6,7 +6,6 @@ messages:
   distance-limit: "&cDu kannst dich nicht weiter als {distance} Blöcke von deinem Körper entfernen!"
   body-attacked: "&cDein Körper wurde von {damager} angegriffen! Kamera-Modus beendet."
   body-env-damage: "&cDein Körper wurde durch Umweltschaden verletzt! Kamera-Modus beendet."
-  body-suffocating: "&cDein Körper erstickt! Kamera-Modus wird beendet."
   body-moved: "&cDein Körper wurde bewegt! Kamera-Modus beendet."
   cant-fly-in-lava: "&cDu kannst nicht durch Lava fliegen! Kamera-Modus wird beendet."
   cant-interact-other: "&cDu kannst mit dem Körper eines anderen Spielers nicht interagieren!"
