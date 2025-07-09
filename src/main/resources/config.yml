@@ -21,6 +21,7 @@ camera-mode:
   max-distance: 100.0
   distance-warning-cooldown: 3
   drowning-damage: 2.0
+  #cam, true, false
   player_visibility_mode: "cam"
   allow_invisibility_potion: true
 
