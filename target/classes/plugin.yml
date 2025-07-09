@@ -8,7 +8,7 @@ description: Ein Plugin für einen Kamera-Modus mit Rüstungsständer
 commands:
   cam:
     description: Aktiviert oder deaktiviert den Kamera-Modus
-    usage: /cam
+    usage: /<command>
     permission: camplugin.use
     permission-message: "Du hast keine Berechtigung für diesen Command!"
 

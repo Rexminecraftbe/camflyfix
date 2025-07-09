@@ -588,6 +588,7 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void filterCommandSuggestions(PlayerCommandSendEvent event) {
+        event.getCommands().removeIf(cmd -> cmd.equalsIgnoreCase("camplugin:cam"));
         // Remove the namespaced variant of our command from the suggestion list
         // so only "/cam" is shown when tab completing. Using the plugin name
         // ensures this works even if the plugin is renamed.
