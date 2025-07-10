@@ -7,8 +7,10 @@ messages:
   body-attacked: "&cDein Körper wurde von {damager} angegriffen! Kamera-Modus beendet."
   body-env-damage: "&cDein Körper wurde durch {cause} verletzt! Kamera-Modus beendet."
   body-moved: "&cDein Körper wurde bewegt! Kamera-Modus beendet."
+  body-got-effect: "&cDein Körper wurde von einem Effekt getroffen und der Kameramodus wurde beendet!"
   cant-fly-in-lava: "&cDu kannst nicht durch Lava fliegen! Kamera-Modus wird beendet."
   cant-interact-other: "&cDu kannst mit dem Körper eines anderen Spielers nicht interagieren!"
+
   cant-attack-other-body: "&cDu kannst im Kameramodus keine anderen Körper angreifen."
   armorstand.name-format: "&e{player}'s Körper"
   hitbox.name-format: "&c[HITBOX] {player}"

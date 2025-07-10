@@ -5,14 +5,12 @@ messages:
   no-player: "&cDieser Befehl kann nur von Spielern verwendet werden."
   distance-limit: "&cDu kannst dich nicht weiter als {distance} Blöcke von deinem Körper entfernen!"
   body-attacked: "&cDein Körper wurde von {damager} angegriffen! Kamera-Modus beendet."
-  body-env-damage: "&cDein Körper wurde durch Umweltschaden verletzt! Kamera-Modus beendet."
-  body-suffocating: "&cDein Körper erstickt! Kamera-Modus wird beendet."
-  body-drowning: "&cDein Körper ertrinkt!"
+  body-env-damage: "&cDein Körper wurde durch {cause} verletzt! Kamera-Modus beendet."
   body-moved: "&cDein Körper wurde bewegt! Kamera-Modus beendet."
+  body-got-effect: "&cDein Körper wurde von einem Effekt getroffen und der Kameramodus wurde beendet!"
   cant-fly-in-lava: "&cDu kannst nicht durch Lava fliegen! Kamera-Modus wird beendet."
-  no-projectiles: "&cDu kannst im Kamera-Modus keine Projektile verwenden."
-  cant-manipulate-other: "&cDu kannst den Körper eines anderen Spielers nicht manipulieren!"
   cant-interact-other: "&cDu kannst mit dem Körper eines anderen Spielers nicht interagieren!"
+
   cant-attack-other-body: "&cDu kannst im Kameramodus keine anderen Körper angreifen."
   armorstand.name-format: "&e{player}'s Körper"
   hitbox.name-format: "&c[HITBOX] {player}"
@@ -25,6 +23,7 @@ camera-mode:
   max-distance: 100.0
   distance-warning-cooldown: 3
   drowning-damage: 2.0
+  #cam, true, false
   player_visibility_mode: "cam"
   allow_invisibility_potion: true
 

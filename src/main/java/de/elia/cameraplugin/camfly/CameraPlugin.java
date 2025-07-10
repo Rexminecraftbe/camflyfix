@@ -16,7 +16,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.potion.PotionType;
 import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.potion.PotionType; // Statt dem veralteten PotionData
+import org.bukkit.entity.Arrow;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -212,7 +215,8 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         hitboxEntities.put(hitbox.getUniqueId(), player.getUniqueId());
 
         startHitboxSync(armorStand, hitbox);
-        startArmorStandHealthCheck(player, armorStand);
+        startFireOverlaySuppression(player);
+        startArmorStandHealthCheck(player, armorStand);;
         addPlayerToNoCollisionTeam(player);
         updateViewerTeam(player);
         updateVisibilityForAll();
@@ -325,6 +329,30 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         }.runTaskTimer(this, 1L, 1L);
     }
 
+    // NEUE METHODE: Diese Methode sorgt dafür, dass das Feuer-Overlay nicht angezeigt wird.
+    private void startFireOverlaySuppression(Player player) {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // Bricht die Aufgabe ab, wenn der Spieler nicht mehr im Kameramodus oder offline ist
+                if (!cameraPlayers.containsKey(player.getUniqueId()) || !player.isOnline()) {
+                    this.cancel();
+                    return;
+                }
+
+                // Verhindere Brennticks und Feuerschaden
+                if (player.getFireTicks() > 0) {
+                    player.setFireTicks(0);
+                }
+
+                // Stelle sicher, dass der Feuerresistenz-Effekt aktiv bleibt
+                if (!player.hasPotionEffect(PotionEffectType.FIRE_RESISTANCE)) {
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, Integer.MAX_VALUE, 0, false, false));
+                }
+            }
+        }.runTaskTimer(this, 1L, 1L); // Läuft jeden Tick
+    }
+
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onArmorStandDamage(EntityDamageEvent event) {
@@ -394,6 +422,35 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         pendingDamage.remove(ownerUUID);
     }
 
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerFireDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+
+        if (!cameraPlayers.containsKey(player.getUniqueId())) {
+            return;
+        }
+
+        // Verhindere Feuerschaden für Spieler im Kameramodus
+        if (event.getCause() == EntityDamageEvent.DamageCause.FIRE ||
+                event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK ||
+                event.getCause() == EntityDamageEvent.DamageCause.LAVA) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPlayerCombust(EntityCombustEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+
+        if (cameraPlayers.containsKey(player.getUniqueId())) {
+            // Verhindere das Brennen von Spielern im Kameramodus
+            event.setCancelled(true);
+        }
+    }
 
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -416,7 +473,6 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
             }
         }
     }
-
     @EventHandler(ignoreCancelled = true)
     public void onHitboxTransform(EntityTransformEvent event) {
         if (event.getTransformReason() == EntityTransformEvent.TransformReason.LIGHTNING
@@ -452,6 +508,89 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         }
     }
 
+    // NEU: Verhindert, dass Spieler im Cam-Modus direkt Effekte erhalten
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerReceivePotionEffect(EntityPotionEffectEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+
+        if (isInCameraMode(player)) {
+            PotionEffect newEffect = event.getNewEffect();
+            if (newEffect != null) {
+                PotionEffectType type = newEffect.getType();
+                // Erlaube dem Plugin, seine eigenen Effekte (Unsichtbarkeit/Feuerresistenz) zu verwalten
+                if (type.equals(PotionEffectType.INVISIBILITY) || type.equals(PotionEffectType.FIRE_RESISTANCE)) {
+                    return;
+                }
+            }
+            // Blockiere alle anderen neuen Effekte
+            if (event.getAction() == EntityPotionEffectEvent.Action.ADDED || event.getAction() == EntityPotionEffectEvent.Action.CHANGED) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onPotionSplash(PotionSplashEvent event) {
+        for (LivingEntity entity : event.getAffectedEntities()) {
+            UUID ownerUUID = armorStandOwners.get(entity.getUniqueId());
+            if (ownerUUID == null) {
+                ownerUUID = hitboxEntities.get(entity.getUniqueId());
+            }
+
+            if (ownerUUID != null) {
+                Player owner = Bukkit.getPlayer(ownerUUID);
+                if (owner != null && owner.isOnline() && isInCameraMode(owner)) {
+                    for (PotionEffect effect : event.getPotion().getEffects()) {
+                        owner.addPotionEffect(effect);
+                    }
+                    owner.sendMessage(getMessage("body-got-effect"));
+                    exitCameraMode(owner);
+                }
+            }
+        }
+    }
+
+    // NEU: Fängt verweilende Tränke ab, die den Körper treffen (mit Korrektur für veraltete API)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onLingeringCloudApply(AreaEffectCloudApplyEvent event) {
+        List<LivingEntity> affected = new ArrayList<>(event.getAffectedEntities());
+        AreaEffectCloud cloud = event.getEntity();
+
+        for (LivingEntity entity : affected) {
+            UUID ownerUUID = armorStandOwners.get(entity.getUniqueId());
+            if (ownerUUID == null) {
+                ownerUUID = hitboxEntities.get(entity.getUniqueId());
+            }
+
+            if (ownerUUID != null) {
+                Player owner = Bukkit.getPlayer(ownerUUID);
+                if (owner != null && owner.isOnline() && isInCameraMode(owner)) {
+                    // Übertrage alle Custom-Effekte
+                    for (PotionEffect effect : cloud.getCustomEffects()) {
+                        owner.addPotionEffect(effect);
+                    }
+
+                    // Übertrage den Basis-Trank-Effekt, falls keine Custom-Effekte vorhanden sind
+                    if (cloud.getCustomEffects().isEmpty()) {
+                        PotionType baseType = cloud.getBasePotionType();
+                        PotionEffectType effectType = baseType.getEffectType();
+                        if (effectType != null) {
+                            int duration = (int) (baseType.isExtendable() ? 10 * 20 : 5 * 20);
+                            int amplifier = baseType.isUpgradeable() ? 1 : 0;
+                            owner.addPotionEffect(new PotionEffect(effectType, duration, amplifier));
+                        }
+                    }
+
+                    owner.sendMessage(getMessage("body-got-effect"));
+                    exitCameraMode(owner);
+                    event.getAffectedEntities().remove(entity);
+                }
+            }
+        }
+    }
+
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
@@ -472,6 +611,8 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
             player.stopSound(SoundCategory.PLAYERS);
         }
     }
+
+
 
     @EventHandler
     public void onPlayerDamage(EntityDamageEvent event) {
@@ -587,6 +728,31 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         if (cameraPlayers.containsKey(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBodyPotionEffect(EntityPotionEffectEvent event) {
+        Entity entity = event.getEntity();
+        UUID ownerUUID = null;
+
+        if (entity instanceof ArmorStand) {
+            ownerUUID = armorStandOwners.get(entity.getUniqueId());
+        } else if (entity instanceof Villager) {
+            ownerUUID = hitboxEntities.get(entity.getUniqueId());
+        }
+
+        if (ownerUUID == null) return;
+
+        Player owner = Bukkit.getPlayer(ownerUUID);
+        if (owner != null) {
+            PotionEffect newEffect = event.getNewEffect();
+            if (newEffect != null) {
+                owner.addPotionEffect(newEffect);
+            }
+            exitCameraMode(owner);
+        }
+
+        event.setCancelled(true);
     }
 
     @EventHandler
