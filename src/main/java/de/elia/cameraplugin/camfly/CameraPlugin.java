@@ -212,6 +212,7 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         hitboxEntities.put(hitbox.getUniqueId(), player.getUniqueId());
 
         startHitboxSync(armorStand, hitbox);
+        startFireOverlaySuppression(player);
         addPlayerToNoCollisionTeam(player);
         updateViewerTeam(player);
         updateVisibilityForAll();
@@ -320,6 +321,21 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
                     return;
                 }
                 hitbox.teleport(armorStand.getLocation().add(0, 0.1, 0));
+            }
+        }.runTaskTimer(this, 1L, 1L);
+    }
+
+    private void startFireOverlaySuppression(Player player) {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!cameraPlayers.containsKey(player.getUniqueId()) || !player.isOnline()) {
+                    this.cancel();
+                    return;
+                }
+                if (player.getFireTicks() > 0) {
+                    player.setFireTicks(0);
+                }
             }
         }.runTaskTimer(this, 1L, 1L);
     }
@@ -586,6 +602,31 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         if (cameraPlayers.containsKey(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBodyPotionEffect(EntityPotionEffectEvent event) {
+        Entity entity = event.getEntity();
+        UUID ownerUUID = null;
+
+        if (entity instanceof ArmorStand) {
+            ownerUUID = armorStandOwners.get(entity.getUniqueId());
+        } else if (entity instanceof Villager) {
+            ownerUUID = hitboxEntities.get(entity.getUniqueId());
+        }
+
+        if (ownerUUID == null) return;
+
+        Player owner = Bukkit.getPlayer(ownerUUID);
+        if (owner != null) {
+            PotionEffect newEffect = event.getNewEffect();
+            if (newEffect != null) {
+                owner.addPotionEffect(newEffect);
+            }
+            exitCameraMode(owner);
+        }
+
+        event.setCancelled(true);
     }
 
     @EventHandler
