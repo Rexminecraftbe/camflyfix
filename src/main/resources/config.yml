@@ -10,6 +10,8 @@ messages:
   body-got-effect: "&cDein Körper wurde von einem Effekt getroffen und der Kameramodus wurde beendet!"
   cant-fly-in-lava: "&cDu kannst nicht durch Lava fliegen! Kamera-Modus wird beendet."
   cant-interact-other: "&cDu kannst mit dem Körper eines anderen Spielers nicht interagieren!"
+  protocol-found: "ProtocolLib gefunden! Sound-Unterdrückung ist aktiviert."
+  protocol-not-found: "ProtocolLib wurde nicht gefunden. Die Sound-Unterdrückung ist deaktiviert."
 
   cant-attack-other-body: "&cDu kannst im Kameramodus keine anderen Körper angreifen."
   armorstand.name-format: "&e{player}'s Körper"
@@ -33,3 +35,6 @@ armorstand.gravity: true
 armorstand.damage-amount: 1.0
 armorstand.durability-loss: true
 armorstand.damage-ignore-armor: true
+
+mute_attack: false
+mute_footsteps: false

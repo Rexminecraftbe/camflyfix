@@ -15,6 +15,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.SkullMeta;
+import de.elia.cameraplugin.mutplayer.ProtocolLibHook;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.enchantments.Enchantment;
@@ -54,6 +55,10 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
     private final Map<UUID, UUID> armorStandOwners = new HashMap<>();
     private final Map<UUID, UUID> hitboxEntities = new HashMap<>();
     private final Set<UUID> pendingDamage = new HashSet<>();
+    private final Set<UUID> mutedPlayers = new HashSet<>();
+    private boolean protocolLibAvailable = false;
+    private boolean muteAttack;
+    private boolean muteFootsteps;
 
     private static final String NO_COLLISION_TEAM = "cam_no_push";
 
@@ -75,6 +80,15 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
     public void onEnable() {
         saveDefaultConfig();
         loadConfigValues();
+        if (muteAttack || muteFootsteps) {
+            if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
+                protocolLibAvailable = true;
+                new ProtocolLibHook(this, mutedPlayers, muteAttack, muteFootsteps);
+                getLogger().info(getMessage("protocol-found"));
+            } else {
+                getLogger().warning(getMessage("protocol-not-found"));
+            }
+        }
         setupNoCollisionTeam();
         this.getCommand("cam").setExecutor(new CamCommand(this));
         this.getCommand("cam").setTabCompleter(new CamTabCompleter());
@@ -94,6 +108,7 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
                 exitCameraMode(player);
             }
         }
+        mutedPlayers.clear();
         getLogger().info("CameraPlugin wurde deaktiviert!");
     }
 
@@ -210,6 +225,9 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         cameraPlayers.put(player.getUniqueId(), new CameraData(armorStand, hitbox, originalGameMode, originalAllowFlight, originalFlying, originalSilent, originalInventory, originalArmor, pausedEffects));
         armorStandOwners.put(armorStand.getUniqueId(), player.getUniqueId());
         hitboxEntities.put(hitbox.getUniqueId(), player.getUniqueId());
+        if (protocolLibAvailable) {
+            mutedPlayers.add(player.getUniqueId());
+        }
 
         startHitboxSync(armorStand, hitbox);
         startFireOverlaySuppression(player);
@@ -260,6 +278,7 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         removePlayerFromNoCollisionTeam(player);
 
         cameraPlayers.remove(player.getUniqueId());
+        mutedPlayers.remove(player.getUniqueId());
         updateViewerTeam(player);
 
         // Aufräumen
@@ -504,6 +523,7 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         }
         distanceMessageCooldown.remove(event.getPlayer().getUniqueId());
         removePlayerFromNoCollisionTeam(event.getPlayer());
+        mutedPlayers.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
@@ -715,6 +735,8 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         armorStandNameVisible = getConfig().getBoolean("armorstand.name-visible", true);
         armorStandVisible = getConfig().getBoolean("armorstand.visible", true);
         armorStandGravity = getConfig().getBoolean("armorstand.gravity", true);
+        muteAttack = getConfig().getBoolean("mute_attack", false);
+        muteFootsteps = getConfig().getBoolean("mute_footsteps", false);
     }
 
     private void setupNoCollisionTeam() {
@@ -805,6 +827,17 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         }
         reloadConfig();
         loadConfigValues();
+        protocolLibAvailable = false;
+        mutedPlayers.clear();
+        if (muteAttack || muteFootsteps) {
+            if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
+                protocolLibAvailable = true;
+                new ProtocolLibHook(this, mutedPlayers, muteAttack, muteFootsteps);
+                getLogger().info(getMessage("protocol-found"));
+            } else {
+                getLogger().warning(getMessage("protocol-not-found"));
+            }
+        }
         setupNoCollisionTeam();
         for (Player online : Bukkit.getOnlinePlayers()) {
             updateViewerTeam(online);

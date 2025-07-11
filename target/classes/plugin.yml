@@ -4,6 +4,7 @@ main: de.elia.cameraplugin.camfly.CameraPlugin
 api-version: 1.21
 author: Rexminecraft343
 description: Ein Plugin für einen Kamera-Modus mit Rüstungsständer
+softdepend: [ProtocolLib]
 
 commands:
   cam:
