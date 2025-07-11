@@ -80,14 +80,14 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
     public void onEnable() {
         saveDefaultConfig();
         loadConfigValues();
-        if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
-            protocolLibAvailable = true;
-            if (muteAttack || muteFootsteps) {
+        if (muteAttack || muteFootsteps) {
+            if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
+                protocolLibAvailable = true;
                 new ProtocolLibHook(this, mutedPlayers, muteAttack, muteFootsteps);
+                getLogger().info(getMessage("protocol-found"));
+            } else {
+                getLogger().warning(getMessage("protocol-not-found"));
             }
-            getLogger().info(getMessage("protocol-found"));
-        } else {
-            getLogger().warning(getMessage("protocol-not-found"));
         }
         setupNoCollisionTeam();
         this.getCommand("cam").setExecutor(new CamCommand(this));
@@ -829,14 +829,14 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         loadConfigValues();
         protocolLibAvailable = false;
         mutedPlayers.clear();
-        if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
-            protocolLibAvailable = true;
-            if (muteAttack || muteFootsteps) {
+        if (muteAttack || muteFootsteps) {
+            if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
+                protocolLibAvailable = true;
                 new ProtocolLibHook(this, mutedPlayers, muteAttack, muteFootsteps);
+                getLogger().info(getMessage("protocol-found"));
+            } else {
+                getLogger().warning(getMessage("protocol-not-found"));
             }
-            getLogger().info(getMessage("protocol-found"));
-        } else {
-            getLogger().warning(getMessage("protocol-not-found"));
         }
         setupNoCollisionTeam();
         for (Player online : Bukkit.getOnlinePlayers()) {
