@@ -60,6 +60,9 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
     private boolean muteAttack;
     private boolean muteFootsteps;
 
+    private String protocolFoundColor;
+    private String protocolNotFoundColor;
+
     private static final String NO_COLLISION_TEAM = "cam_no_push";
 
     // Configurable values
@@ -85,9 +88,9 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
             if (muteAttack || muteFootsteps) {
                 new ProtocolLibHook(this, mutedPlayers, muteAttack, muteFootsteps);
             }
-            getLogger().info(getMessage("protocol-found"));
+            Bukkit.getConsoleSender().sendMessage(protocolFoundColor + getMessage("protocol-found") + ChatColor.RESET);
         } else {
-            getLogger().warning(getMessage("protocol-not-found"));
+            Bukkit.getConsoleSender().sendMessage(protocolNotFoundColor + getMessage("protocol-not-found") + ChatColor.RESET);
         }
         setupNoCollisionTeam();
         this.getCommand("cam").setExecutor(new CamCommand(this));
@@ -737,6 +740,18 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
         armorStandGravity = getConfig().getBoolean("armorstand.gravity", true);
         muteAttack = getConfig().getBoolean("mute_attack", false);
         muteFootsteps = getConfig().getBoolean("mute_footsteps", false);
+
+        protocolFoundColor = parseColor("log-colors.protocol-found", "GREEN");
+        protocolNotFoundColor = parseColor("log-colors.protocol-not-found", "");
+    }
+
+    private String parseColor(String path, String def) {
+        String value = getConfig().getString(path, def);
+        try {
+            return ChatColor.valueOf(value.toUpperCase()).toString();
+        } catch (IllegalArgumentException ex) {
+            return ChatColor.translateAlternateColorCodes('&', value);
+        }
     }
 
     private void setupNoCollisionTeam() {
@@ -834,9 +849,9 @@ public final class CameraPlugin extends JavaPlugin implements Listener {
             if (muteAttack || muteFootsteps) {
                 new ProtocolLibHook(this, mutedPlayers, muteAttack, muteFootsteps);
             }
-            getLogger().info(getMessage("protocol-found"));
+            Bukkit.getConsoleSender().sendMessage(protocolFoundColor + getMessage("protocol-found") + ChatColor.RESET);
         } else {
-            getLogger().warning(getMessage("protocol-not-found"));
+            Bukkit.getConsoleSender().sendMessage(protocolNotFoundColor + getMessage("protocol-not-found") + ChatColor.RESET);
         }
         setupNoCollisionTeam();
         for (Player online : Bukkit.getOnlinePlayers()) {
